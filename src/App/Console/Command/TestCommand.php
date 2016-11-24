@@ -27,119 +27,127 @@ EOT
 
         $helper = $this->getHelper('question');
 
-        $command = "AWS_CONFIG_FILE=/Users/youval/.aws/credentials  aws ec2 describe-instances --filters 'Name=tag:service_type,Values=frontcararec' 'Name=instance-state-name,Values=running'";
-        $command = "AWS_CONFIG_FILE=/Users/youval/.aws/credentials  aws ec2 describe-instances --filters 'Name=instance-state-name,Values=running'";
-        $command = "AWS_CONFIG_FILE=/Users/youval/.aws/credentials  aws ec2 describe-instances";
-        $output_cmd = shell_exec($command);
+        //$command = "AWS_CONFIG_FILE=/Users/youval/.aws/credentials  aws ec2 describe-instances";
+        //$output_cmd = shell_exec($command);
+
+        $output_cmd = file_get_contents(__DIR__ . '/../../../../data/aws_ec2_describe-instances.json');
 
         $result = json_decode($output_cmd, 1);
 
-        foreach ($result['Reservations'] as $idReservation => $reservation) {
 
-            $Instances = $reservation['Instances'];
-            foreach ($Instances as $idInstances => $Instance) {
-                // Tags
-                foreach ($Instance['Tags'] as $tag) {
-                    if ( !isset($filters['tag:service_type'][$tag['Key']]) || !in_array($tag['Value'], $filters['tag:service_type'][$tag['Key']]) ) {
-                        $filters['tag:'][$tag['Key']][] = $tag['Value'];
-                    }
-                }
+        $__filters = [];
 
-                // instance-state-name
-                foreach ($Instance['Monitoring'] as $key => $value) {
-                    if ( !isset($filters['instance-state-name']) || !in_array($value, $filters['instance-state-name']) ) {
-                        $filters['instance-state-name'][] = $value;
+        do {
+            $__filterName = '';
+            $__filterValue = '';
+
+            foreach ($result['Reservations'] as $idReservation => $reservation) {
+
+                $Instances = $reservation['Instances'];
+                foreach ($Instances as $idInstances => $Instance) {
+                    // Tags
+                    foreach ($Instance['Tags'] as $tag) {
+                        if ( !isset($filters['tag:service_type'][$tag['Key']]) || !in_array($tag['Value'], $filters['tag:service_type'][$tag['Key']]) ) {
+                            $filters['tag:'][$tag['Key']][] = $tag['Value'];
+                        }
                     }
+
+                    // instance-state-name
+                    $filters['instance-state-name'][] = $Instance['State']['Name'];
                 }
-                
             }
+
+            $filter     = false;
+            $filter_n2  = false;
+            $subfilters = [];
+            $__filterName = '';
+            $__filterValue = '';
+
+            do {
+
+                
+                $break      = false;
+                
+                if ( !$filter ) {
+                    $choices = array_keys($filters);
+                    $questionLabel = "Choississez un filtre";
+                    $filter_n2 = false;
+                }
+                elseif ( substr($filter, -1) == ':' ) {
+                    $subfilters = $filters[$filter];
+                    $choices = array_values( array_keys($subfilters) );
+                    $questionLabel = "Choississez un completement de filtre";
+                    $filter_n2 = true;
+                }
+                else {
+                    $choices = ($filter_n2) ? $subfilters[$filter] : $filters[$filter];
+                    $choices = array_values( array_unique($choices) );
+                    $questionLabel = "Choississez une valeur";
+                    $break = true;
+                }
+
+                $question = new ChoiceQuestion($questionLabel, $choices, 0);
+                $question->setErrorMessage('Le Filtre %s est invalide.');
+                $filter = $helper->ask($input, $output, $question);
+
+
+                if ( !$break ) {
+                    $__filterName .= $filter;
+                }
+                else {
+                    $__filterValue = $filter;
+                }
+
+            } while ( !$break );
+
+
+            $__filters[] = [
+                'Name' => $__filterName, 
+                'Value' => $__filterValue
+            ];
+
+            $question = new ChoiceQuestion(
+                'Voulez-vous ajouter un filter ?',
+                ['Oui', 'Non'],
+                1
+            );
+            $question->setErrorMessage('Choix invalid');
+            $otherFilter = $helper->ask($input, $output, $question);
+
+        }while ( $otherFilter == 'Oui' );
+
+        $filters = [];
+
+        $output->writeln('Selected filters : ');
+        foreach ($__filters as $key => $__filter) {
+            $filters[] = 'Name='.$__filter['Name'].',Values='.$__filter['Value'];
+            $output->writeln(' - Name='.$__filter['Name'].',Values='.$__filter['Value']);
         }
 
 
-        $question = new ChoiceQuestion(
-            'Choississez un filter',
-            array_keys($filters),
-            0
-        );
-        $question->setErrorMessage('Le Filtre %s est invalide.');
-        $filter_1 = $helper->ask($input, $output, $question);
+        $command    = "AWS_CONFIG_FILE=/Users/youval/.aws/credentials  aws ec2 describe-instances --filters " . implode(' ', $filters);
+        $output_cmd = shell_exec($command);
+        $result     = json_decode($output_cmd, 1);
 
-        do {
-            $choices = !isset($filter_2) ? $filters[$filter_1] : $choices[$filter_2];
-
-            $select = !isset($filter_2) ? $filter_1 : $filter_2;
-
-            $question = new ChoiceQuestion(
-                'Choississez une valeur',
-                array_values( array_unique($choices) ),
-                0
-            );
-            $question->setErrorMessage('Le Filtre %s est invalide.');
-            $filter_2 = $helper->ask($input, $output, $question);
-
-
-        } while ( substr($select, -1) == ':' );
-
-
-        print_r($filters);
-        exit();
 
         $choices = [];
 
         foreach ($result['Reservations'] as $key => $instance) {
-
             $instanceId = $instance['Instances'][0]['InstanceId'];
-            $ipAddress = $instance['Instances'][0]['NetworkInterfaces'][0]['PrivateIpAddress'];
-
-            $tags = [];
-            foreach ($instance['Instances'][0]['Tags'] as $key => $value) {
-                $tags[$value['Key']] = $value['Value'];
-                /*if ( $value['Key'] == 'service_type' && !empty($value['Value']) ) {
-                    $name = $value['Value'];
-                }*/
-            }
-            //$choices[] = $name . '[' . $ipAddress . '] (' . $instanceId . ')';
-            //$choices[] = $ipAddress . ' (' . $name . ')';
-            //$choices[] = $name;
-            $name = $tags['service_type'];
-            if ( !is_array($choices[$name]) || !in_array($ipAddress, $choices[$name]) ) {
-                $choices[$name][] = $ipAddress;
-            }
+            $ipAddress  = $instance['Instances'][0]['NetworkInterfaces'][0]['PrivateIpAddress'];
+            $choices[]  = $ipAddress;
         }
 
-        $choicesKeys = array_keys($choices);
-
-
-        $helper = $this->getHelper('question');
         $question = new ChoiceQuestion(
             'Please select your favorite color (defaults to red)',
-            $choicesKeys,
+            array_values( array_unique($choices) ),
             0
         );
         $question->setErrorMessage('Color %s is invalid.');
-
         $color = $helper->ask($input, $output, $question);
 
-
-
-        $question = new ChoiceQuestion(
-            'Please select your favorite color (defaults to red)',
-            $choices[$color],
-            0
-        );
-        $question->setErrorMessage('Color %s is invalid.');
-
-        $color = $helper->ask($input, $output, $question);
-
-
-        $output->writeln('You have just selected: '.$color);
-
-        $output->writeln('You have just selected: ssh root@164.132.198.130');
-
-        $ip = "164.132.198.130";
-        //exec("ssh root@$ip");
-
-
+        //print_r($filters);
+        
     }
 
 }
