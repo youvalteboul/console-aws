@@ -1,8 +1,23 @@
 {
     "require": {
-        "symfony/console": "^3.1"
+        "incenteev/composer-parameter-handler": "^2.1",
+        "symfony/console": "^3.1",
+        "symfony/yaml": "^3.1"
     },
     "autoload": {
         "psr-0": { "": "src/" }
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters"
+        ],
+        "post-update-cmd": [
+            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters"
+        ]
+    },
+    "extra": {
+        "incenteev-parameters": {
+            "file": "config/parameters.yml"
+        }
     }
 }

@@ -14,6 +14,7 @@ class ComposerStaticInit5b1283a3f049c1624c6d1ed7d3fb6afb
         'S' => 
         array (
             'Symfony\\Polyfill\\Mbstring\\' => 26,
+            'Symfony\\Component\\Yaml\\' => 23,
             'Symfony\\Component\\Debug\\' => 24,
             'Symfony\\Component\\Console\\' => 26,
         ),
@@ -21,12 +22,20 @@ class ComposerStaticInit5b1283a3f049c1624c6d1ed7d3fb6afb
         array (
             'Psr\\Log\\' => 8,
         ),
+        'I' => 
+        array (
+            'Incenteev\\ParameterHandler\\' => 27,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
+        'Symfony\\Component\\Yaml\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/yaml',
         ),
         'Symfony\\Component\\Debug\\' => 
         array (
@@ -39,6 +48,10 @@ class ComposerStaticInit5b1283a3f049c1624c6d1ed7d3fb6afb
         'Psr\\Log\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
+        ),
+        'Incenteev\\ParameterHandler\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/incenteev/composer-parameter-handler',
         ),
     );
 
