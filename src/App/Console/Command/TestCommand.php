@@ -124,7 +124,6 @@ EOT
             $output->writeln(' - Name='.$__filter['Name'].',Values='.$__filter['Value']);
         }
 
-
         $command    = "AWS_CONFIG_FILE=/Users/youval/.aws/credentials  aws ec2 describe-instances --filters " . implode(' ', $filters);
         $output_cmd = shell_exec($command);
         $result     = json_decode($output_cmd, 1);
@@ -147,7 +146,6 @@ EOT
         $color = $helper->ask($input, $output, $question);
 
         //print_r($filters);
-        
     }
 
 }
