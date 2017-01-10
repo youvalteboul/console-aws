@@ -1,0 +1,12 @@
+imports:
+    - { resource: config.yml }
+
+amazon:
+    auth_type: credentials # credentials or config
+
+    credentials:
+        profile: default
+        output: json
+        region: eu-west-1
+        aws_access_key_id: AKIAJDH7NOFPATJ5OEBA
+        aws_secret_access_key: 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

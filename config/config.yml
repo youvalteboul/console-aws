@@ -1,0 +1,18 @@
+# imports:
+#     - { resource: parameters.yml }
+#     - { resource: security.yml }
+#     - { resource: services.yml }
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+parameters:
+    locale: en
+imports:
+    - { resource: config.yml }
+
+amazon:
+    auth_type: config # credentials or config
+    
+    config:
+        profile: default
+        output: json
+        region: eu-west-1
